@@ -1,34 +1,45 @@
 package edu.parser.web.weather;
 
 
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 
 public class WeatherParser {
-    public static void main(String[] args) throws IOException {
-        Document doc = getPage();
-//        Element search = doc.select("input[class=SearchInput--InputField--232zz Search--inputClass--eGdhQ]")
-//                .first().attr("value", "Moscow");
-        String tempUnit = doc.selectFirst("span.temp__unit").text();
-            String tempValueYesterday = doc.select("span.temp__value").get(1).text();
-            String tempValueToday = doc.select("span.temp__value").get(2).text();
-            String tempValueFeel = doc.select("span.temp__value").get(3).text();
-            System.out.println("Yesterday in same time " + tempValueYesterday + tempUnit);
-            System.out.println("Today " + tempValueToday + tempUnit);
-            System.out.println("Feels like " + tempValueFeel + tempUnit);
 
+    private PageBuilder builder;
+
+    public WeatherParser(PageBuilder builder) {
+        this.builder = builder;
     }
 
-    public static Document getPage() throws IOException {
-//        String url = "https://www.accuweather.com/en/world-weather";
-//        Document page = Jsoup.parse(new URL(url), 3000);
-        Document doc = Jsoup.connect("https://yandex.ru/pogoda/saint-petersburg")
-                .userAgent("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)").get();
-        return doc;
+    public List<String> getWeather() throws IOException {
+        Document doc = this.builder.getWeatherPage();
+        List<String> result = new ArrayList<>();
+        //YESTERDAY
+        Element yesterday = doc.select("div.term.term_orient_h.fact__yesterday").first();
+        String yesterdayLabel = yesterday.getElementsByClass("term__label").text();
+        String yesterdayTemperature = yesterday.getElementsByClass("temp__value").text();
+        String tempUnit = doc.selectFirst("span.temp__unit").text();
+        //TODAY
+        Element today = doc.select("div.temp.fact__temp.fact__temp_size_s").first();
+        String todayLabel = today.child(0).text();
+        String todayTemp = today.child(1).text();
+        //FEELS
+        Element todayFeel = doc.select("div.link__feelings.fact__feelings").first();
+        String todayFeels = todayFeel.child(1).text();
+        String todayAttr = todayFeel.child(0).text();
+
+        //Strings
+        result.add(yesterdayLabel + " " + yesterdayTemperature + tempUnit);
+        result.add(todayLabel + " " + todayTemp + tempUnit + " " + todayAttr);
+        result.add(todayFeels);
+
+        return result;
     }
 }
